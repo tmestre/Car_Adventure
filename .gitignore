@@ -1,0 +1,11 @@
+# This .gitignore file should be placed at the root of your Unity project directory
+#
+# Get latest from https://github.com/github/gitignore/blob/master/Unity.gitignore
+#
+Udemy_Boost/[Ll]ibrary/
+Udemy_Boost/[Tt]emp/
+Udemy_Boost/[Oo]bj/
+Udemy_Boost/[Bb]uild/
+Udemy_Boost/[Bb]uilds/
+Udemy_Boost/[Ll]ogs/
+Udemy_Boost/[Uu]ser[Ss]ettings/
