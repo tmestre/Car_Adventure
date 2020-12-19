@@ -34,7 +34,8 @@ public class CarController : MonoBehaviour
     [SerializeField] Transform centerOfMass;
     float steerFactor;
 
-    
+    [Header("Object Properties")]
+    [SerializeField] bool playerCar;    
 
     // constants
     string horizontal = "Horizontal";
@@ -53,10 +54,14 @@ public class CarController : MonoBehaviour
 // PHYSICS LOOP
 
     void FixedUpdate() {
-        SteerUpdate();
-        Throttle();         // gain speed
-        Steer();            // go left and right
-        Brake();            // stop fully
+        SteerAdjust();          // adjusts steering according to speed
+
+        // only apply to active player
+        if (playerCar) {
+            Throttle();         // gain speed
+            Steer();            // go left and right
+            Brake();            // stop fully
+        }
     }
 
 
@@ -65,7 +70,14 @@ public class CarController : MonoBehaviour
 
     void Update() {
         WheelUpdate();          // wheel mesh gets updated
-        EngineSound();          // car engine varies according to speed
+
+        // only applies to active player
+        if (playerCar) {
+            _audiosource.enabled = true;
+            EngineSound();          // car engine varies according to speed
+        } else {
+            _audiosource.enabled = false;
+        }
     }
 
 
@@ -86,7 +98,7 @@ public class CarController : MonoBehaviour
 
     // space to brake
     private void Brake() {
-        if (Input.GetKey(KeyCode.LeftShift)) {
+        if (Input.GetButton("Fire3")) {
             wheelCollider[2].brakeTorque = brakePower;
             wheelCollider[3].brakeTorque = brakePower;
         } else {
@@ -99,7 +111,7 @@ public class CarController : MonoBehaviour
 
 // BEHAVIOR
 
-    private void SteerUpdate() {
+    private void SteerAdjust() {
         steerFactor = maxSteer - (0.2f * _rigidbody.velocity.magnitude);
     }
 

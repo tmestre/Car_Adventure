@@ -9,56 +9,83 @@ public class CameraMover : MonoBehaviour
 
 // VARIABLES
 
-    [Header("Turn Reaction")]
-    [SerializeField] Vector3 turnPos;           // amount of movement on x-axis
-    float turnFactor;                           // factor based on user input
-    Vector3 startPos;                           // idle position of camera
+    [Header("Camera Properties")]
+    [SerializeField] Transform target;                  // reference to player
+    string targetName;                                  // string for target
+    Transform thirdCameraPos;                           // position of "Camera Position" game object
+    [SerializeField] Vector3 topCameraPos = new Vector3 (150, 150, -150);              // adjustable position of top down camera
+    [SerializeField] byte followFactor = 10;            // speed of camera position adjustment
+    [SerializeField] byte rotationFactor = 10;          // speed of camera rotation onto player
+    [SerializeField] byte cameraFocusHeight = 3;        // where the camera focuses
+    [SerializeField] byte cameraFOV = 22;               // orthographic size of camera
+                             
 
-    [Header("Reverse Reaction")]
-    [SerializeField] Vector3 reversePos;
-    Quaternion reverseRot;
-    Rigidbody _rigidbody;
+    [Header("Camera Mode")]
+    [SerializeField] bool thirdPersonCamera;            // 3rd person camera
+    [SerializeField] bool topDownCamera;                // top down camera
+
+
+
+
+// REFERENCES
+
+    Camera mainCamera;                  // reference to camera
+    Vector3 distanceToTarget;           // calculates line between camera to player
 
 
 
 // GAME SETUP
 
-    void Start() {
-        startPos = transform.localPosition;         // gets position of camera
-        reverseRot = transform.rotation;
-        _rigidbody = GetComponentInParent<Rigidbody>();
+    private void Start() {
+        mainCamera = GetComponent<Camera>();
+        targetName = target.name;
+        thirdCameraPos = GameObject.Find($"/{targetName}/CamPos").transform;
     }
 
 
 
-// GAME LOOP
+// LATE GAME LOOP
 
-    void Update() {
-        TurnMovement();
-        ReverseView();
+    private void FixedUpdate() {
+
+        // switching between cameras
+        if (thirdPersonCamera) {
+            ThirdPersonMode();
+
+        } else if (topDownCamera) {
+            TopDownMode();
+        }
     }
 
 
 
 // BEHAVIOR
 
-    // moves camera to the side when player turns the car
-    private void TurnMovement() {
-        turnFactor = Input.GetAxis("Horizontal");           // -1 to 1 based on horizontal
-        Vector3 offset = turnPos * Mathf.Clamp (turnFactor, -1, 1);              // creates offset based on factor
-        transform.localPosition = startPos + offset;        // applies offset to position
+    // camera smoothly follows from behind
+    private void ThirdPersonMode() {
+
+        Vector3 adjustedTargetPos = new Vector3(0, cameraFocusHeight, 0) + target.position;
+        distanceToTarget = adjustedTargetPos - transform.position;                                                            // calculates distance to player
+        Quaternion targetRotation = Quaternion.LookRotation(distanceToTarget);                                              // uses that distance to determine point and look at it
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotationFactor);         // smoothly move current rotation
+        transform.position = Vector3.Lerp(transform.position, thirdCameraPos.position, Time.deltaTime * followFactor);      // moves position according to player's position
+
+        mainCamera.orthographic = false;
     }
 
-    // turns camera backward when player goes into reverse
-    private void ReverseView() {
-        // if (_rigidbody.velocity.magnitude <= -0.5) {
+    // camera fixed in position, looks down
+    private void TopDownMode() {
 
+        transform.position = target.position + topCameraPos;                                                                // locks camera at a set distance to player
+        distanceToTarget = target.position - transform.position;                                                            // calculates distance to player from set position
+        Quaternion targetRotation = Quaternion.LookRotation(distanceToTarget);                                              // smoothly move current rotation 
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * rotationFactor);         // moves position according to player's position
 
-        // UNFINISHED
-        if (Input.GetKey(KeyCode.Q)) { 
-            reverseRot = Quaternion.Euler(0, 180, 0);
-            transform.localRotation = reverseRot;
-            transform.localPosition = reversePos;
-        }
+        mainCamera.orthographic = true;
+        mainCamera.orthographicSize = cameraFOV;
+    }
+
+    private void UpdateTarget() {
+        thirdCameraPos = GameObject.Find($"/{targetName}/CamPos").transform;
     }
 }
